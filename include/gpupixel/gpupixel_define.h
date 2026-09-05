@@ -63,8 +63,11 @@
 #endif
 
 #ifdef _WIN32
-#ifdef BUILDING_GPUPIXEL_DLL
+#if defined(BUILDING_GPUPIXEL_DLL)
 #define GPUPIXEL_API __declspec(dllexport)
+#elif defined(GPUPIXEL_STATIC)
+// 정적 라이브러리로 같이 지을 때(빈캠 윈도우) — 가져오기 표시가 있으면 정적 멤버 정의가 C2491 로 막힌다.
+#define GPUPIXEL_API
 #else
 #define GPUPIXEL_API __declspec(dllimport)
 #endif
