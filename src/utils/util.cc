@@ -32,20 +32,24 @@
 }
 
 #if defined(GPUPIXEL_IOS)
-static bool s_isAppActive = false;
+// BEAN: iOS forbids GL commands only in the BACKGROUND, not while merely inactive
+// (launching, a system sheet or notification centre over the app). The upstream
+// resign/become-active pair left s_isAppActive false during launch, so a context
+// created then was never created at all and every later GL task was dropped.
+// Track foreground/background instead, starting in the foreground.
+static bool s_isAppActive = true;
 
 + (void)load {
   @autoreleasepool {
-    // 注册应用状态通知
     [[NSNotificationCenter defaultCenter]
         addObserver:self
            selector:@selector(applicationStateChanged:)
-               name:UIApplicationWillResignActiveNotification
+               name:UIApplicationDidEnterBackgroundNotification
              object:nil];
     [[NSNotificationCenter defaultCenter]
         addObserver:self
            selector:@selector(applicationStateChanged:)
-               name:UIApplicationDidBecomeActiveNotification
+               name:UIApplicationWillEnterForegroundNotification
              object:nil];
   }
 }
@@ -53,7 +57,7 @@ static bool s_isAppActive = false;
 + (void)applicationStateChanged:(NSNotification*)notification {
   @synchronized(self) {
     if ([notification.name
-            isEqualToString:UIApplicationWillResignActiveNotification]) {
+            isEqualToString:UIApplicationDidEnterBackgroundNotification]) {
       s_isAppActive = false;
     } else {
       s_isAppActive = true;
