@@ -23,7 +23,7 @@ const std::string kVertexShaderString = R"(
 
 #if defined(GPUPIXEL_GLES_SHADER)
 const std::string kFragmentShaderString = R"(
-    varying mediump vec2 textureCoordinate;
+    varying highp vec2 textureCoordinate;   // BEAN: mediump(fp16) coords are ~1px off at 1920 wide and blur the whole frame
     uniform sampler2D inputImageTexture;
 
     void main() {
