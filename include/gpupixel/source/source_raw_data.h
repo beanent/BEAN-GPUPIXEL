@@ -20,6 +20,12 @@ class GPUPIXEL_API SourceRawData : public Filter {
 
   ~SourceRawData() override;
 
+  // Feed a frame that already lives in a GL texture (for example one backed by
+  // an IOSurface / CVPixelBuffer) — no CPU upload. The texture must be sampled
+  // as RGBA and stay valid until this call returns. Must be called with the
+  // GPUPixel context current (use SyncRunWithContext).
+  void ProcessTexture(uint32_t texture, int width, int height);
+
   void ProcessData(const uint8_t* data,
                    int width,
                    int height,

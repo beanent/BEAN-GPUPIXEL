@@ -30,6 +30,12 @@ class GPUPIXEL_API SinkRawData : public Sink {
   void Render() override;
 
   const uint8_t* GetRgbaBuffer();
+
+  // Render the next frames straight into this GL texture (for example one
+  // backed by an IOSurface / CVPixelBuffer) instead of the internal buffer —
+  // no glReadPixels. Pass 0 to go back to the internal buffer. The texture
+  // must match the frame size. Call with the GPUPixel context current.
+  void SetExternalTarget(uint32_t texture, int width, int height);
   const uint8_t* GetI420Buffer();
   int GetWidth() const { return width_; }
   int GetHeight() const { return height_; }
@@ -55,6 +61,10 @@ class GPUPIXEL_API SinkRawData : public Sink {
 
   // Image dimensions
   int32_t width_ = 0;
+  uint32_t external_texture_ = 0;
+  uint32_t external_fbo_ = 0;
+  int32_t external_width_ = 0;
+  int32_t external_height_ = 0;
   int32_t height_ = 0;
 
   // Frame buffers for pixel data

@@ -94,6 +94,44 @@ void SourceRawData::ProcessData(const uint8_t* data,
       [=] { GenerateTextureWithPixels(data, width, height, stride, type); });
 }
 
+void SourceRawData::ProcessTexture(uint32_t texture, int width, int height) {
+  if (!framebuffer_ || (framebuffer_->GetWidth() != width ||
+                        framebuffer_->GetHeight() != height)) {
+    framebuffer_ = GPUPixelContext::GetInstance()
+                       ->GetFramebufferFactory()
+                       ->CreateFramebuffer(width, height);
+  }
+  this->SetFramebuffer(framebuffer_, NoRotation);
+
+  GPUPixelContext::GetInstance()->SetActiveGlProgram(filter_program_);
+  this->GetFramebuffer()->Activate();
+
+  float imageVertices[]{
+      -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+  };
+
+  GL_CALL(glEnableVertexAttribArray(filter_position_attribute_));
+  GL_CALL(glVertexAttribPointer(filter_position_attribute_, 2, GL_FLOAT, 0, 0,
+                                imageVertices));
+
+  GL_CALL(glEnableVertexAttribArray(filter_tex_coord_attribute_));
+  GL_CALL(glVertexAttribPointer(filter_tex_coord_attribute_, 2, GL_FLOAT, 0, 0,
+                                GetTextureCoordinate(rotation_)));
+
+  GL_CALL(glActiveTexture(GL_TEXTURE0));
+  GL_CALL(glBindTexture(GL_TEXTURE_2D, texture));
+  GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+  GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+  GL_CALL(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+  GL_CALL(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+  filter_program_->SetUniformValue("inputImageTexture", 0);
+
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  this->GetFramebuffer()->Deactivate();
+
+  Source::DoRender(true);
+}
+
 int SourceRawData::GenerateTextureWithPixels(const uint8_t* pixels,
                                              int width,
                                              int height,

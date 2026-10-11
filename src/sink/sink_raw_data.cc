@@ -66,6 +66,12 @@ SinkRawData::~SinkRawData() {
   yuv_buffer_ = nullptr;
 }
 
+void SinkRawData::SetExternalTarget(uint32_t texture, int width, int height) {
+  external_texture_ = texture;
+  external_width_ = width;
+  external_height_ = height;
+}
+
 void SinkRawData::Render() {
   if (input_framebuffers_.empty()) {
     return;
@@ -73,7 +79,9 @@ void SinkRawData::Render() {
 
   int width = input_framebuffers_[0].frame_buffer->GetWidth();
   int height = input_framebuffers_[0].frame_buffer->GetHeight();
-  if (width_ != width || height_ != height) {
+  const bool external = external_texture_ != 0 && external_width_ == width &&
+                        external_height_ == height;
+  if (!external && (width_ != width || height_ != height)) {
     width_ = width;
     height_ = height;
     InitFramebuffer(width, height);
@@ -81,9 +89,18 @@ void SinkRawData::Render() {
   }
 
   GPUPixelContext::GetInstance()->SetActiveGlProgram(shader_program_);
-  framebuffer_->Activate();
+  if (external) {
+    if (external_fbo_ == 0) {
+      GL_CALL(glGenFramebuffers(1, &external_fbo_));
+    }
+    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, external_fbo_));
+    GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                   GL_TEXTURE_2D, external_texture_, 0));
+  } else {
+    framebuffer_->Activate();
+  }
 
-  GL_CALL(glViewport(0, 0, width_, height_));
+  GL_CALL(glViewport(0, 0, width, height));
 
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -115,7 +132,19 @@ void SinkRawData::Render() {
   // Draw frame buffer
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-  framebuffer_->Deactivate();
+  if (external) {
+    // The byte path hands out opaque pixels (alpha forced to 255) — do the same
+    // here so both paths give the same bytes.
+    GL_CALL(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE));
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    GL_CALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+    GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                   GL_TEXTURE_2D, 0, 0));
+    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+  } else {
+    framebuffer_->Deactivate();
+  }
 }
 
 bool SinkRawData::InitWithShaderString(
