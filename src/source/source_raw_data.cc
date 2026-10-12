@@ -132,6 +132,17 @@ void SourceRawData::ProcessTexture(uint32_t texture, int width, int height) {
   Source::DoRender(true);
 }
 
+void SourceRawData::ProcessTextureDirect(uint32_t texture,
+                                         int width,
+                                         int height) {
+  auto keep = framebuffer_;
+  this->SetFramebuffer(GPUPixelFramebuffer::WrapTexture(texture, width, height),
+                       NoRotation);
+  Source::DoRender(true);
+  // Do not keep pointing at the caller's texture.
+  this->SetFramebuffer(keep, NoRotation);
+}
+
 int SourceRawData::GenerateTextureWithPixels(const uint8_t* pixels,
                                              int width,
                                              int height,

@@ -9,6 +9,7 @@
 
 #include "core/gpupixel_gl_include.h"
 
+#include <memory>
 #include <vector>
 
 namespace gpupixel {
@@ -31,6 +32,14 @@ class GPUPIXEL_API GPUPixelFramebuffer {
       const TextureAttributes texture_attributes = default_texture_attributes);
   ~GPUPixelFramebuffer();
 
+  // Wrap a GL texture the caller owns (for example one backed by an IOSurface /
+  // CVPixelBuffer) so a source can hand it on, or a filter can draw into it,
+  // without a copy pass. The texture is NOT deleted with this object; it must
+  // outlive every use. Call with the GPUPixel context current.
+  static std::shared_ptr<GPUPixelFramebuffer> WrapTexture(uint32_t texture,
+                                                          int width,
+                                                          int height);
+
   uint32_t GetTexture() const { return texture_; }
 
   uint32_t GetFramebuffer() const { return framebuffer_; }
@@ -52,6 +61,9 @@ class GPUPIXEL_API GPUPixelFramebuffer {
   int height_;
   TextureAttributes texture_attributes_;
   bool has_framebuffer_;
+  bool owns_texture_ = true;
+  struct WrapTag {};
+  GPUPixelFramebuffer(WrapTag, uint32_t texture, int width, int height);
   uint32_t texture_;
   uint32_t framebuffer_;
 

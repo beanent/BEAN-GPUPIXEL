@@ -48,9 +48,34 @@ GPUPixelFramebuffer::GPUPixelFramebuffer(
   }
 }
 
+GPUPixelFramebuffer::GPUPixelFramebuffer(WrapTag,
+                                         uint32_t texture,
+                                         int width,
+                                         int height)
+    : texture_(texture), framebuffer_(-1) {
+  width_ = width;
+  height_ = height;
+  texture_attributes_ = default_texture_attributes;
+  has_framebuffer_ = true;
+  owns_texture_ = false;
+  GL_CALL(glGenFramebuffers(1, &framebuffer_));
+  GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_));
+  GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                 GL_TEXTURE_2D, texture_, 0));
+  GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+}
+
+std::shared_ptr<GPUPixelFramebuffer> GPUPixelFramebuffer::WrapTexture(
+    uint32_t texture,
+    int width,
+    int height) {
+  return std::shared_ptr<GPUPixelFramebuffer>(
+      new GPUPixelFramebuffer(WrapTag{}, texture, width, height));
+}
+
 GPUPixelFramebuffer::~GPUPixelFramebuffer() {
   gpupixel::GPUPixelContext::GetInstance()->SyncRunWithContext([&] {
-    bool should_delete_texture = (texture_ != -1);
+    bool should_delete_texture = owns_texture_ && (texture_ != -1);
     bool should_delete_framebuffer = (framebuffer_ != -1);
 
     if (should_delete_texture) {

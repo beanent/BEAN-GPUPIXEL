@@ -12,6 +12,10 @@
 #include "gpupixel/filter/filter.h"
 #include "gpupixel/source/source.h"
 
+// Texture in / texture out (ProcessTexture, ProcessTextureDirect,
+// SinkRawData::SetExternalTarget, GPUPixelFramebuffer::WrapTexture) is present.
+#define GPUPIXEL_HAS_TEXTURE_IO 1
+
 namespace gpupixel {
 class GPUPixelGLProgram;
 class GPUPIXEL_API SourceRawData : public Filter {
@@ -25,6 +29,11 @@ class GPUPIXEL_API SourceRawData : public Filter {
   // as RGBA and stay valid until this call returns. Must be called with the
   // GPUPixel context current (use SyncRunWithContext).
   void ProcessTexture(uint32_t texture, int width, int height);
+
+  // Same, but hands the texture straight to the first sink — no copy pass at
+  // all. The texture must be set up for sampling by the caller (filter and
+  // wrap modes) and stay valid until this call returns.
+  void ProcessTextureDirect(uint32_t texture, int width, int height);
 
   void ProcessData(const uint8_t* data,
                    int width,
