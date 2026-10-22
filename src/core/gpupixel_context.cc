@@ -25,6 +25,14 @@ GPUPixelContext::GPUPixelContext() : current_shader_program_(0) {
   task_queue_ = std::make_shared<DispatchQueue>();
 #endif
   framebuffer_factory_ = new FramebufferFactory();
+#if defined(GPUPIXEL_ANGLE)
+  // BEAN: the EGL handles are read by UseAsCurrent() before CreateContext() has run (SyncRunWithContext calls
+  // UseAsCurrent first). Left uninitialised they were garbage and eglMakeCurrent crashed inside ANGLE at random.
+  egl_display_ = EGL_NO_DISPLAY;
+  egl_config_ = nullptr;
+  egl_surface_ = EGL_NO_SURFACE;
+  egl_context_ = EGL_NO_CONTEXT;
+#endif
   Init();
 }
 
@@ -440,6 +448,10 @@ void GPUPixelContext::UseAsCurrent() {
     [image_processing_context_ makeCurrentContext];
   }
 #elif defined(GPUPIXEL_ANDROID) || defined(GPUPIXEL_ANGLE)
+#if defined(GPUPIXEL_ANGLE)
+  if (egl_display_ == EGL_NO_DISPLAY)
+    return;  // not created yet (first task on the context thread creates it)
+#endif
   if (eglGetCurrentContext() != egl_context_) {
     LOG_TRACE("Setting current EGL context");
     eglMakeCurrent(egl_display_, egl_surface_, egl_surface_, egl_context_);
