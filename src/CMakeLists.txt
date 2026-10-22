@@ -392,9 +392,21 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
   # Windows platform dependencies
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  target_link_libraries(
-    ${gpupixel_libs_name} PRIVATE opengl32 glfw::glfw libyuv::yuv glad::glad
-                                  stb::stb ghc::filesystem)
+  if(GPUPIXEL_USE_ANGLE)
+    # BEAN: OpenGL ES on Direct3D 11 through ANGLE (libEGL.dll / libGLESv2.dll next to the exe).
+    #   GPUPIXEL_ANGLE_DIR = folder with include/ (EGL GLES2 GLES3 KHR) and win/ (import libs).
+    target_compile_definitions(${gpupixel_libs_name} PUBLIC GPUPIXEL_ANGLE NOMINMAX)
+    target_include_directories(${gpupixel_libs_name} PUBLIC ${GPUPIXEL_ANGLE_DIR}/include)
+    target_link_libraries(
+      ${gpupixel_libs_name} PUBLIC ${GPUPIXEL_ANGLE_DIR}/win/libEGL.lib
+                                   ${GPUPIXEL_ANGLE_DIR}/win/libGLESv2.lib)
+    target_link_libraries(${gpupixel_libs_name} PRIVATE libyuv::yuv stb::stb
+                                                        ghc::filesystem)
+  else()
+    target_link_libraries(
+      ${gpupixel_libs_name} PRIVATE opengl32 glfw::glfw libyuv::yuv glad::glad
+                                    stb::stb ghc::filesystem)
+  endif()
 
   # macOS platform dependencies
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

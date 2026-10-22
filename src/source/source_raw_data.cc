@@ -161,7 +161,11 @@ int SourceRawData::GenerateTextureWithPixels(const uint8_t* pixels,
   if (type == GPUPIXEL_FRAME_TYPE_BGRA) {
 // Desktop GL (Windows/Linux via glad) supports GL_BGRA as well. Without this branch
 // BGRA frames were never uploaded on Windows and every output came back black.
-#if defined(GPUPIXEL_IOS) || defined(GPUPIXEL_MAC) || defined(GPUPIXEL_WIN) ||     defined(GPUPIXEL_LINUX)
+#if defined(GPUPIXEL_ANGLE)
+    // ANGLE (GLES): GL_EXT_texture_format_BGRA8888 wants the internal format to be GL_BGRA_EXT too.
+    GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA_EXT, stride / 4, height, 0,
+                         GL_BGRA_EXT, GL_UNSIGNED_BYTE, pixels));
+#elif defined(GPUPIXEL_IOS) || defined(GPUPIXEL_MAC) || defined(GPUPIXEL_WIN) ||     defined(GPUPIXEL_LINUX)
     GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, stride / 4, height, 0,
                          GL_BGRA, GL_UNSIGNED_BYTE, pixels));
 #endif

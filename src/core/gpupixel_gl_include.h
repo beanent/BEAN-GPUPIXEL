@@ -24,6 +24,17 @@
 #include <GLES3/gl3ext.h>
 #include <android/log.h>
 #include <jni.h>
+#elif defined(GPUPIXEL_WIN) && defined(GPUPIXEL_ANGLE)
+// BEAN: ANGLE (OpenGL ES 2 on Direct3D 11). EGL's platform header pulls in
+// windows.h; keep its min/max macros out of the way.
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#include <GLES3/gl3.h>
 #elif defined(GPUPIXEL_WIN) || defined(GPUPIXEL_LINUX)
 // clang-format off
 #include <glad/glad.h>

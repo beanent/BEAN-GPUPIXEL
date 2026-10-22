@@ -20,6 +20,8 @@ if(APPLE)
 endif()
 
 option(GPUPIXEL_BUILD_DESKTOP_DEMO "Build desktop demo" OFF)
+option(GPUPIXEL_USE_ANGLE "Windows: draw through ANGLE (OpenGL ES on Direct3D 11) instead of desktop OpenGL" OFF)
+set(GPUPIXEL_ANGLE_DIR "" CACHE PATH "ANGLE folder (include/ + win/*.lib), used when GPUPIXEL_USE_ANGLE is ON")
 
 # face detection option
 option(GPUPIXEL_ENABLE_FACE_DETECTOR "Enable face detection functionality" ON)

@@ -52,7 +52,18 @@
 #error "Unknown compiler"
 #endif
 
-#if defined(GPUPIXEL_IOS) || defined(GPUPIXEL_ANDROID) || defined(GPUPIXEL_WASM)
+// BEAN: Windows runs on ANGLE (OpenGL ES translated to Direct3D 11) instead of
+// the vendor's desktop OpenGL driver. GPUPIXEL_ANGLE is defined by CMake
+// (GPUPIXEL_USE_ANGLE). It behaves like Android: EGL context, GLES shaders.
+#if defined(GPUPIXEL_WIN) && defined(GPUPIXEL_ANGLE)
+#define GPUPIXEL_EGL
+#endif
+#if defined(GPUPIXEL_ANDROID)
+#define GPUPIXEL_EGL
+#endif
+
+#if defined(GPUPIXEL_IOS) || defined(GPUPIXEL_ANDROID) || defined(GPUPIXEL_WASM) || \
+    (defined(GPUPIXEL_WIN) && defined(GPUPIXEL_ANGLE))
 #define GPUPIXEL_GLES_SHADER
 #else
 #define GPUPIXEL_GL_SHADER
