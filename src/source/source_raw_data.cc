@@ -8,6 +8,10 @@
 #include "gpupixel/source/source_raw_data.h"
 #include "core/gpupixel_context.h"
 #include "utils/util.h"
+#if defined(GPUPIXEL_ANDROID)
+#include <vector>
+#include "libyuv.h"
+#endif
 
 namespace gpupixel {
 
@@ -164,6 +168,15 @@ int SourceRawData::GenerateTextureWithPixels(const uint8_t* pixels,
 #if defined(GPUPIXEL_IOS) || defined(GPUPIXEL_MAC) || defined(GPUPIXEL_WIN) ||     defined(GPUPIXEL_LINUX)
     GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, stride / 4, height, 0,
                          GL_BGRA, GL_UNSIGNED_BYTE, pixels));
+#elif defined(GPUPIXEL_ANDROID)
+    // GL ES does not accept GL_BGRA as a format. Without this branch BGRA frames
+    // were never uploaded on Android and every output came back black.
+    // libyuv ARGB = memory B G R A, ABGR = memory R G B A.
+    static thread_local std::vector<uint8_t> rgba;
+    rgba.resize((size_t)stride * (size_t)height);
+    libyuv::ARGBToABGR(pixels, stride, rgba.data(), stride, stride / 4, height);
+    GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, stride / 4, height, 0,
+                         GL_RGBA, GL_UNSIGNED_BYTE, rgba.data()));
 #endif
   } else if (type == GPUPIXEL_FRAME_TYPE_RGBA) {
     GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, stride / 4, height, 0,
